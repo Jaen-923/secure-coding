@@ -1,10 +1,160 @@
-{% extends "base.html" %}
-{% block title %}회원가입{% endblock %}
-{% block content %}
-<h2>회원가입</h2>
-<form method="post">
-  사용자명: <input type="text" name="username" required><br>
-  비밀번호: <input type="password" name="password" required><br>
-  <button type="submit">회원가입</button>
-</form>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>화햇마켓 회원가입</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #f9f9f9;
+      font-family: "Pretendard", sans-serif;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-bottom: 2px solid #00a04e;
+      background-color: white;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+    }
+
+    .header img {
+      height: 40px;
+      margin-right: 0.5rem;
+    }
+
+    .header .logo-text {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #00a04e;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 420px;
+      margin: 8rem auto 0 auto;
+      padding: 2.5rem;
+      border: 1px solid #ddd;
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    }
+
+    .title {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .form input {
+      width: 100%;
+      padding: 0.6rem;
+      margin-bottom: 2rem;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      font-size: 0.95rem;
+    }
+
+    .field-label {
+      font-size: 0.8rem;
+      color: #555;
+      margin: 0 0 0.3rem 0;
+      text-align: left;
+      font-weight: semibold;
+    }
+
+
+    .form input::placeholder {
+      font-size: 0.7rem;
+      color: #aaa;
+    }
+
+    .password-rule {
+      font-size: 0.75rem;
+      color: #999;
+      margin-top: -1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .btn-green {
+      width: 100%;
+      background: #00a04e;
+      margin-top: 2.5rem;
+      color: white;
+      padding: 0.7rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+      box-shadow: 0 3px 6px rgba(0, 160, 78, 0.2);
+    }
+
+    .btn-green:hover {
+      background: #009247;
+    }
+
+    .link-group {
+      text-align: center;
+      margin-top: 2.5rem;
+      font-size: 0.75rem;
+    }
+
+    .link-group a {
+      color: #555555;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .link-group a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header class="header">
+  <img src="../static/whitehat_logo.png" alt="로고">
+  <h1 class="logo-text">화햇마켓</h1>
+</header>
+
+<!-- 회원가입 폼 -->
+<div class="container">
+  <h2 class="title">회원가입</h2>
+
+  <form method="post" class="form">
+    <p class="field-label">* 닉네임</p>
+    <input type="text" id="nickname" name="nickname" placeholder="닉네임을 입력해주세요." required>
+    <p class="field-label">* 이메일</p>
+    <input type="email" id="email" name="email" placeholder="이메일을 입력해주세요." required>
+
+    <p class="field-label">* 비밀번호</p>
+    <input type="password" id="password" name="password" placeholder="비밀번호를 입력해주세요" required>
+    <p class="password-rule">※ 비밀번호는 영문, 숫자를 포함하여 8자 이상이어야 합니다.</p>
+
+    <p class="field-label">* 비밀번호 확인</p>
+    <input type="password" id="confirm_password" name="confirm_password" placeholder="비밀번호를 다시 입력해주세요" required>
+
+    <button type="submit" class="btn-green">회원가입</button>
+
+    <div class="link-group">
+      <a href="login.html">이미 계정이 있으신가요? 로그인하기</a>
+    </div>
+  </form>
+</div>
+
+</body>
+</html>
