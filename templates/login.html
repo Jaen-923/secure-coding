@@ -1,10 +1,137 @@
-{% extends "base.html" %}
-{% block title %}로그인{% endblock %}
-{% block content %}
-<h2>로그인</h2>
-<form method="post">
-  사용자명: <input type="text" name="username" required><br>
-  비밀번호: <input type="password" name="password" required><br>
-  <button type="submit">로그인</button>
-</form>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>화햇마켓 로그인</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #f9f9f9;
+      font-family: "Pretendard", sans-serif;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-bottom: 2px solid #00a04e;
+      background-color: white;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+    }
+
+    .header img {
+      height: 40px;
+      margin-right: 0.5rem;
+    }
+
+    .header .logo-text {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #00a04e;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 420px;
+      margin: 8rem auto 0 auto;
+      padding: 2.5rem;
+      border: 1px solid #ddd;
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    }
+
+    .title {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .form input {
+      width: 100%;
+      padding: 0.6rem;
+      margin-bottom: 2rem;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      font-size: 0.95rem;
+    }
+
+    .form input::placeholder {
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+
+    .btn-green {
+      width: 100%;
+      background: #00a04e;
+      margin-top: 2.5rem;
+      color: white;
+      padding: 0.7rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+      box-shadow: 0 3px 6px rgba(0, 160, 78, 0.2);
+    }
+
+    .btn-green:hover {
+      background: #009247;
+    }
+
+    .link-group {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 2.5rem;
+      font-size: 0.75rem;
+    }
+
+    .link-group a {
+      color: #555555;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .link-group a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header class="header">
+  <img src="../static/whitehat_logo.png" alt="로고">
+  <h1 class="logo-text">화햇마켓</h1>
+</header>
+
+<!-- 로그인 폼 -->
+<div class="container">
+  <h2 class="title">로그인</h2>
+  <form method="post" class="form">
+    <input type="text" id="username" name="username" placeholder="이메일을 입력해주세요" required>
+    <input type="password" id="password" name="password" placeholder="비밀번호를 입력해주세요" required>
+
+    <button type="submit" class="btn-green">로그인</button>
+
+    <div class="link-group">
+      <a href="register.html">회원가입</a>
+      <a href="forgot_password.html">비밀번호 찾기</a>
+    </div>
+  </form>
+</div>
+
+</body>
+</html>
