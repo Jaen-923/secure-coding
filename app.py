@@ -34,7 +34,7 @@ def init_db():
                 id VARCHAR(36) PRIMARY KEY,
                 username VARCHAR(255) NOT NULL UNIQUE,
                 password VARCHAR(255) NOT NULL,
-                nicname VARCHAR(255) NOT NULL UNIQUE
+                nickname VARCHAR(255) NOT NULL UNIQUE,
                 bio TEXT,
                 role VARCHAR(50) NOT NULL,
                 is_banned BOOLEAN DEFAULT FALSE,
@@ -135,6 +135,7 @@ def signup():
     username = data.get('username')
     password = data.get('password')
     nickname = data.get('nickname')
+    bio = data.get('bio', '')
     user_id = str(uuid.uuid4())
     db = get_db()
     cursor = db.cursor()
