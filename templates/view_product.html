@@ -21,7 +21,7 @@
     }
     .image {
       width: 100%;
-      min-height: 100px;
+      height: auto;
       object-fit: cover;
       border-radius: 10px;
     }
@@ -66,22 +66,135 @@
     .btn:hover {
       background-color: #008c4a;
     }
+
+    /* 신고하기 버튼 스타일 */
+    .report-btn {
+      background-color: #ff4d4d;
+      margin-top: 1rem;
+      padding: 0.8rem 1.6rem;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 1rem;
+      color: white;
+    }
+    .report-btn:hover {
+      background-color: #e60000;
+    }
+
+    /* 신고 폼 (dialog) 스타일 */
+    dialog {
+      border: none;
+      border-radius: 10px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 400px;
+    }
+    dialog textarea {
+      width: 100%;
+      height: 100px;
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin-top: 1rem;
+    }
+    dialog button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      background-color: #00a04e;
+      color: white;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <img src="../static/item.png" alt="상품 이미지" class="image">
+    <img src="/static/item.png" alt="상품 이미지" class="image">
     <div class="info">
-    <div class="meta">등록자: 손사용자 | 등록일: 2025-04-15</div>
-      <h2>에코백</h2>
-      <div class="price">10,000원</div>
-      <div class="description">
-        심플하고 실용적인 디자인의 에코백입니다. 튼튼한 캔버스 원단으로 제작되었으며, 환경을 생각하는 소비자에게 적합합니다.
-      </div>
+      <div class="meta" id="meta">등록자: ... | 등록일: ...</div>
+      <h2 id="title">상품명</h2>
+      <div class="price" id="price">0원</div>
+      <div class="description" id="description">상품 설명</div>
       <div class="btn-wrapper">
         <a href="#" class="btn">구매하기</a>
+        <!-- 신고하기 버튼 추가 -->
+        <a href="#" class="report-btn" onclick="openReportDialog()">🚨 신고하기</a>
       </div>
     </div>
   </div>
+
+  <!-- 신고 폼 (dialog) -->
+  <dialog id="reportDialog">
+    <form method="dialog" onsubmit="submitReport(event)">
+      <h3>신고하기</h3>
+      <label for="reportType">신고 유형</label>
+      <select id="reportType" required>
+        <option value="item">상품</option>
+        <option value="user">유저</option>
+      </select>
+      <br><br>
+      <label for="reportReason">신고 사유</label>
+      <textarea id="reportReason" required placeholder="신고 사유를 입력해주세요..." rows="5" style="width: 100%;"></textarea>
+      <br>
+      <button type="submit" style="margin-top: 1rem;">제출</button>
+    </form>
+  </dialog>
+
+  <script>
+    const itemId = "{{ item_id }}"; // 서버에서 상품 ID를 가져오는 부분 (Jinja2 사용 예시)
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const res = await fetch(`/items/${itemId}`);
+        const item = await res.json();
+
+        if (!res.ok) {
+          alert(item.message);
+          return;
+        }
+
+        document.getElementById("title").textContent = item.title;
+        document.getElementById("price").textContent = `${parseInt(item.price).toLocaleString()}원`;
+        document.getElementById("description").textContent = item.description;
+        document.getElementById("meta").textContent = `등록자: ${item.seller_nickname} | 등록일: ${item.created_at?.split("T")[0]}`;
+      } catch (err) {
+        console.error(err);
+        alert("상품 정보를 불러오는 데 실패했습니다.");
+      }
+    });
+
+    // 신고하기 다이얼로그 열기
+    function openReportDialog() {
+      document.getElementById('reportDialog').showModal();
+    }
+
+    // 신고 처리
+    async function submitReport(event) {
+      event.preventDefault();
+      const reason = document.getElementById('reportReason').value;
+      const type = document.getElementById('reportType').value;
+      const productId = window.location.pathname.split("/").pop(); // /product/<id> 에서 id 추출
+
+      const body = {
+        target_id: productId,
+        reason: reason,
+        type: type
+      };
+
+      const res = await fetch('/users/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const result = await res.json();
+      alert(result.message);
+      document.getElementById('reportDialog').close();
+
+      window.location.href = "/home";
+    }
+  </script>
 </body>
 </html>

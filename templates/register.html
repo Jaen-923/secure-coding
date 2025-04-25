@@ -135,14 +135,16 @@
 <div class="container">
   <h2 class="title">회원가입</h2>
 
-  <form method="post" class="form">
+  <form class="form" onsubmit="return handleSignup(event)">
     <p class="field-label">* 닉네임</p>
     <input type="text" id="nickname" name="nickname" placeholder="닉네임을 입력해주세요." required>
+
     <p class="field-label">* 이메일</p>
     <input type="email" id="email" name="email" placeholder="이메일을 입력해주세요." required>
 
     <p class="field-label">* 비밀번호</p>
     <input type="password" id="password" name="password" placeholder="비밀번호를 입력해주세요" required>
+
     <p class="password-rule">※ 비밀번호는 영문, 숫자를 포함하여 8자 이상이어야 합니다.</p>
 
     <p class="field-label">* 비밀번호 확인</p>
@@ -150,11 +152,54 @@
 
     <button type="submit" class="btn-green">회원가입</button>
 
-    <div class="link-group">
-      <a href="login.html">이미 계정이 있으신가요? 로그인하기</a>
-    </div>
   </form>
+    <div class="link-group">
+      <a href="/login" onclick="window.location.href='/'">이미 계정이 있으신가요? 로그인하기</a>
+    </div>
 </div>
 
-</body>
-</html>
+<!-- JS 영역 -->
+<script>
+async function handleSignup(event) {
+  event.preventDefault(); // 기본 form 제출 막기
+
+  const nickname = document.getElementById('nickname').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const confirmPassword = document.getElementById('confirm_password').value;
+
+  if (password !== confirmPassword) {
+    alert("비밀번호가 일치하지 않습니다.");
+    return false;
+  }
+
+  const payload = {
+    username: email,
+    password: password,
+    nickname: nickname
+  };
+
+  try {
+    const response = await fetch('/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert(data.message);
+      window.location.href = '/'; // 가입 성공 시 로그인 화면으로 이동
+    } else {
+      alert(data.message);
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("회원가입 중 오류가 발생했습니다.");
+  }
+
+  return false;
+}
+</script>

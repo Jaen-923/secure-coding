@@ -27,7 +27,7 @@
       margin-top: 1.2rem;
       font-weight: bold;
     }
-    input[type="text"], input[type="number"], textarea, input[type="file"] {
+    input[type="text"], input[type="number"], textarea {
       width: 100%;
       padding: 0.75rem;
       margin-top: 0.5rem;
@@ -60,15 +60,12 @@
 <body>
   <div class="container">
     <h2>상품 등록</h2>
-    <form onsubmit="return validateProductForm()">
+    <form id="productForm">
       <label for="title">상품 제목</label>
       <input type="text" id="title" name="title" placeholder="예: 에코백" required>
 
       <label for="description">상품 설명</label>
       <textarea id="description" name="description" placeholder="상품에 대한 설명을 입력해주세요" required></textarea>
-
-      <label for="image">상품 이미지</label>
-      <input type="file" id="image" name="image" accept="image/*" required>
 
       <label for="price">가격 (원)</label>
       <input type="number" id="price" name="price" placeholder="예: 10000" min="1" required>
@@ -78,20 +75,49 @@
   </div>
 
   <script>
-    function validateProductForm() {
+    async function validateProductForm(event) {
+      event.preventDefault();
+
       const title = document.getElementById("title").value.trim();
       const description = document.getElementById("description").value.trim();
-      const image = document.getElementById("image").value;
       const price = document.getElementById("price").value;
 
-      if (!title || !description || !image || !price || price <= 0) {
+      if (!title || !description || !price || price <= 0) {
         alert("모든 항목을 올바르게 입력해주세요.");
         return false;
       }
 
-      alert("상품이 등록되었습니다.");
-      return true;
+      const payload = {
+        title,
+        description,
+        price
+      };
+
+      try {
+        const response = await fetch("/product/new", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+          alert(result.message);
+          window.location.href = "/home";
+        } else {
+          alert(result.message);
+        }
+      } catch (error) {
+        console.error(error);
+        alert("서버 오류가 발생했습니다.");
+      }
+
+      return false;
     }
+
+    document.getElementById("productForm").addEventListener("submit", validateProductForm);
   </script>
 </body>
 </html>

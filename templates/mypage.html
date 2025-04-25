@@ -213,13 +213,13 @@
   <div class="logo-section">
     <img src="../static/whitehat_logo.png" alt="로고">
     <h1 class="logo-text">
-      <a href="home.html" style="text-decoration: none; color: inherit;">화햇마켓</a>
+      <a href="/home" style="text-decoration: none; color: inherit;">화햇마켓</a>
     </h1>
   </div>
   <nav class="nav">
-    <a href="#">마이페이지</a>
-    <a href="#">상품 등록</a>
-    <a href="#">로그아웃</a>
+    <a href="/mypage">마이페이지</a>
+    <a href="/product/register">상품 등록</a>
+    <a href="/login">로그아웃</a>
   </nav>
 </header>
 
@@ -233,9 +233,9 @@
   </div>
 
   <div class="quick-links">
-    <a href="./change-password.html">비밀번호 변경</a>
+    <a href="/change/password">비밀번호 변경</a>
     <button onclick="openIntroDialog()">소개글 수정</button>
-    <a href="./charge-points.html">포인트 충전</a>
+    <a href="/point">포인트 충전</a>
   </div>
 
   <div class="section">
@@ -296,20 +296,30 @@
 </dialog>
 
 <script>
-  function toggleLike(btn) {
+  // 좋아요 토글 기능: 전역에 위치해야 함!
+  function toggleLike(btn, itemId) {
     const img = btn.querySelector('img');
     const span = btn.nextElementSibling;
-    let count = parseInt(span.textContent);
 
-    if (img.src.includes('empty_heart.png')) {
-      img.src = '../static/heart.png';
-      span.textContent = count + 1;
-    } else {
-      img.src = '../static/empty_heart.png';
-      span.textContent = count - 1;
-    }
+    fetch(`/items/${itemId}/like`, { method: "POST" })
+      .then(res => res.json())
+      .then(data => {
+        let count = parseInt(span.textContent);
+        if (data.liked) {
+          img.src = '../static/heart.png';
+          span.textContent = count + 1;
+        } else {
+          img.src = '../static/empty_heart.png';
+          span.textContent = count - 1;
+        }
+      })
+      .catch(err => {
+        console.error("좋아요 처리 실패", err);
+        alert("좋아요 처리 중 오류가 발생했습니다.");
+      });
   }
 
+  // 소개글 열기/저장
   function openIntroDialog() {
     const dialog = document.getElementById('introDialog');
     const intro = document.getElementById('intro-text').innerText;
@@ -318,10 +328,84 @@
   }
 
   function saveIntro() {
-    const newIntro = document.getElementById('introInput').value;
-    document.getElementById('intro-text').innerText = newIntro;
-    document.getElementById('introDialog').close();
-  }
+  const newIntro = document.getElementById('introInput').value;
+
+  fetch('/users/myProfile/intro', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ intro: newIntro })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.message.includes('변경')) {
+      document.getElementById('intro-text').innerText = newIntro;
+      document.getElementById('introDialog').close();
+      alert('소개글이 성공적으로 변경되었습니다.');
+    } else {
+      alert('소개글 변경 실패: ' + data.message);
+    }
+  })
+  .catch(err => {
+    console.error('소개글 변경 실패', err);
+    alert('서버 오류로 소개글을 변경할 수 없습니다.');
+  });
+}
+
+
+  // 페이지 로드시 API로 정보 렌더링
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      const profileRes = await fetch("/users/myProfile");
+      const profile = await profileRes.json();
+      if (profileRes.ok) {
+        document.querySelector(".user-text h3").innerText = `${profile.nickname} 님`;
+        document.getElementById("intro-text").innerText = profile.bio;
+        document.querySelector(".points-box").innerText = `${profile.points ?? 0}P`;
+      }
+
+      const itemsRes = await fetch("/items/myItems");
+      const items = await itemsRes.json();
+      if (itemsRes.ok) {
+        const list = document.querySelector(".product-list");
+        list.innerHTML = "";
+
+        items.forEach(item => {
+          const isLiked = item.liked_by_me === 1;
+          const heartImg = isLiked ? 'heart.png' : 'empty_heart.png';
+
+          const card = document.createElement("div");
+          card.className = "product-card";
+          card.innerHTML = `
+            <img src="../static/item.png" alt="상품 이미지">
+            <div class="product-info">
+              <h4>${item.title}</h4>
+              <p>${parseInt(item.price).toLocaleString()}원</p>
+              <p style="color: #888; font-size: 0.85rem;">등록일: ${item.created_at.split('T')[0]}</p>
+              <p style="color: ${item.status === '판매중' ? 'green' : 'gray'}; font-weight: bold;">${item.status}</p>
+            </div>
+            <div class="product-like">
+              <div class="heart-container">
+                <button class="heart-btn" onclick="toggleLike(this, '${item.id}')">
+                  <img src="../static/${heartImg}" alt="좋아요">
+                </button>
+                <span>${item.like_count}</span>
+              </div>
+            </div>
+            <div class="product-actions">
+              <button>삭제</button>
+            </div>
+          `;
+          list.appendChild(card);
+        });
+      }
+    } catch (err) {
+      console.error("데이터 불러오기 실패", err);
+      alert("마이페이지 정보를 불러오는 데 실패했습니다.");
+    }
+  });
 </script>
+
 </body>
 </html>

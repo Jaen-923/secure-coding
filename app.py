@@ -1,7 +1,9 @@
 import sqlite3
 import uuid
-from flask import Flask, render_template, request, redirect, url_for, session, flash, g
+from flask import Flask, render_template, request, redirect, url_for, session, flash, g, jsonify
 from flask_socketio import SocketIO, send
+
+from datetime import datetime  # datetime이 위에서 사용되는데 import 안 되어 있어서 함께 추가해야 함
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -107,6 +109,87 @@ def index():
         return redirect(url_for('dashboard'))
     return render_template('login.html')
 
+@app.route('/home')
+def dashboard():
+    if 'user_id' not in session:
+        return redirect(url_for('index'))
+    return render_template('home.html')
+
+@app.route('/login')
+def login_page():
+    return render_template('login.html')
+
+@app.route('/register')
+def register_page():
+    return render_template('register.html')
+
+@app.route('/mypage')
+def mypage():
+    return render_template('mypage.html')
+
+@app.route('/product/register')
+def product_register_page():
+    return render_template('register-product.html')
+
+@app.route('/point')
+def point_charge_page():
+    return render_template('charge-point.html')
+
+@app.route('/change/password')
+def change_password_page():
+    return render_template('change-password.html')
+
+@app.route('/product/<item_id>')
+def product_detail_page(item_id):
+    return render_template('view_product.html', item_id=item_id)
+
+@app.route('/items/<item_id>', methods=['GET'])
+def get_item_detail(item_id):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("""
+        SELECT 
+            p.*, 
+            u.nickname as seller_nickname,
+            (SELECT COUNT(*) FROM item_likes WHERE item_id = p.id) AS like_count
+        FROM products p
+        JOIN users u ON p.seller_id = u.id
+        WHERE p.id = ?
+    """, (item_id,))
+    item = cursor.fetchone()
+    if not item:
+        return jsonify({'message': '상품을 찾을 수 없습니다.'}), 404
+    return jsonify(dict(item))
+
+
+
+@app.route('/product/new', methods=['POST'])
+def create_product():
+    if 'user_id' not in session:
+        return jsonify({'message': '로그인이 필요합니다.'}), 401
+
+    data = request.get_json()
+    title = data.get('title')
+    description = data.get('description')
+    price = data.get('price')
+
+    if not title or not description or not price:
+        return jsonify({'message': '모든 항목을 입력해주세요.'}), 400
+
+    try:
+        product_id = str(uuid.uuid4())
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("""
+            INSERT INTO products (id, title, description, price, status, seller_id, created_at)
+            VALUES (?, ?, ?, ?, '판매중', ?, ?)
+        """, (product_id, title, description, int(price), session['user_id'], datetime.utcnow()))
+        db.commit()
+        return jsonify({'message': '상품이 등록되었습니다.'})
+    except Exception as e:
+        return jsonify({'message': '상품 등록 실패', 'error': str(e)}), 500
+
+
 @app.route('/auth/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -194,11 +277,25 @@ def find_password():
 def my_profile():
     if 'user_id' not in session:
         return jsonify({'message': 'Unauthorized'}), 401
+
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("SELECT id, username, bio, role FROM users WHERE id = ?", (session['user_id'],))
+
+    # 사용자 기본 정보
+    cursor.execute("SELECT id, username, nickname, bio, role FROM users WHERE id = ?", (session['user_id'],))
     user = cursor.fetchone()
-    return jsonify(dict(user))
+    if not user:
+        return jsonify({'message': '유저 정보를 찾을 수 없습니다.'}), 404
+
+    # 포인트 총합
+    cursor.execute("SELECT COALESCE(SUM(CASE WHEN type='충전' THEN amount WHEN type='출금' OR type='구매' THEN -amount ELSE 0 END), 0) as points FROM point_transactions WHERE user_id = ?", (session['user_id'],))
+    points = cursor.fetchone()['points']
+
+    user_info = dict(user)
+    user_info['points'] = points
+
+    return jsonify(user_info)
+
 
 # --- 소개글 변경 ---
 @app.route('/users/myProfile/intro', methods=['PATCH'])
@@ -249,13 +346,25 @@ def report_user():
     if report_type not in ['user', 'item']:
         return jsonify({'message': '신고 유형은 user 또는 item 중 하나여야 합니다.'}), 400
 
-    report_id = str(uuid.uuid4())
+    # 이미 신고한 상품인지 체크
     db = get_db()
     cursor = db.cursor()
+    cursor.execute("""
+        SELECT * FROM reports WHERE reporter_id = ? AND target_id = ? AND type = ?
+    """, (session['user_id'], target_id, report_type))
+    existing_report = cursor.fetchone()
+
+    if existing_report:
+        return jsonify({'message': '이미 신고한 상품입니다.'}), 409
+
+    # 신고 데이터 삽입
+    report_id = str(uuid.uuid4())
     cursor.execute("INSERT INTO reports (id, reporter_id, target_id, type, reason, created_at) VALUES (?, ?, ?, ?, ?, ?)",
                    (report_id, session['user_id'], target_id, report_type, reason, datetime.utcnow()))
     db.commit()
+
     return jsonify({'message': '신고가 접수되었습니다.'})
+
 
 # --- 상품 상태 변경 (판매중 <-> 거래완료) ---
 @app.route('/items/<item_id>/status', methods=['PATCH'])
@@ -274,26 +383,22 @@ def change_item_status(item_id):
 def get_my_items():
     if 'user_id' not in session:
         return jsonify({'message': 'Unauthorized'}), 401
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM products WHERE seller_id = ?", (session['user_id'],))
-    items = [dict(row) for row in cursor.fetchall()]
-    return jsonify(items)
 
-# --- 내가 좋아요한 상품 조회 ---
-@app.route('/users/myProfile/likes', methods=['GET'])
-def get_liked_items():
-    if 'user_id' not in session:
-        return jsonify({'message': 'Unauthorized'}), 401
     db = get_db()
     cursor = db.cursor()
     cursor.execute("""
-        SELECT p.* FROM products p
-        JOIN item_likes l ON p.id = l.item_id
-        WHERE l.user_id = ?
-    """, (session['user_id'],))
-    liked_items = [dict(row) for row in cursor.fetchall()]
-    return jsonify(liked_items)
+        SELECT 
+            p.*,
+            (SELECT COUNT(*) FROM item_likes WHERE item_id = p.id) AS like_count,
+            EXISTS (
+                SELECT 1 FROM item_likes 
+                WHERE item_id = p.id AND user_id = ?
+            ) AS liked_by_me
+        FROM products p
+        WHERE seller_id = ?
+    """, (session['user_id'], session['user_id']))
+    items = [dict(row) for row in cursor.fetchall()]
+    return jsonify(items)
 
 # --- 포인트 충전 ---
 @app.route('/points/deposit', methods=['POST'])
@@ -344,25 +449,65 @@ def use_points():
     db.commit()
     return jsonify({'message': '포인트가 사용되었습니다.'})
 
-# --- 검색 API ---
-@app.route('/items/search')
-def search_items():
-    query = request.args.get('query', '')
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM products WHERE title LIKE ? OR description LIKE ?", 
-                   (f'%{query}%', f'%{query}%'))
-    results = [dict(row) for row in cursor.fetchall()]
-    return jsonify(results)
+@app.route('/items/<item_id>/like', methods=['POST'])
+def toggle_like(item_id):
+    if 'user_id' not in session:
+        return jsonify({'message': 'Unauthorized'}), 401
 
-# --- 정렬 API ---
-@app.route('/items/sort')
-def sort_items():
-    sort_by = request.args.get('by', 'created_at')
-    if sort_by not in ['created_at', 'price', 'title']:
-        sort_by = 'created_at'
     db = get_db()
     cursor = db.cursor()
-    cursor.execute(f"SELECT * FROM products ORDER BY {sort_by} DESC")
-    results = [dict(row) for row in cursor.fetchall()]
-    return jsonify(results)
+
+    # 이미 좋아요했는지 확인
+    cursor.execute("SELECT * FROM item_likes WHERE user_id = ? AND item_id = ?", (session['user_id'], item_id))
+    like = cursor.fetchone()
+
+    if like:
+        # 좋아요 취소
+        cursor.execute("DELETE FROM item_likes WHERE user_id = ? AND item_id = ?", (session['user_id'], item_id))
+        db.commit()
+        return jsonify({'message': '좋아요 취소', 'liked': False})
+    else:
+        # 좋아요 추가
+        cursor.execute("INSERT INTO item_likes (user_id, item_id, liked_at) VALUES (?, ?, ?)", (session['user_id'], item_id, datetime.utcnow()))
+        db.commit()
+        return jsonify({'message': '좋아요 추가', 'liked': True})
+
+# --- 인기 상품 조회 (좋아요 순) ---
+@app.route('/items/popular', methods=['GET'])
+def get_popular_items():
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("""
+        SELECT 
+            p.*, 
+            (SELECT COUNT(*) FROM item_likes WHERE item_id = p.id) AS like_count,
+            (SELECT COUNT(*) FROM item_likes WHERE item_id = p.id AND user_id = ?) AS liked_by_me
+        FROM products p
+        ORDER BY like_count DESC
+        LIMIT 10
+    """, (session['user_id'],))
+    items = [dict(row) for row in cursor.fetchall()]
+    return jsonify(items)
+
+# --- 전체 상품 조회 (최신순) ---
+@app.route('/items/all', methods=['GET'])
+def get_all_items():
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("""
+        SELECT 
+            p.*, 
+            (SELECT COUNT(*) FROM item_likes WHERE item_id = p.id) AS like_count,
+            (SELECT COUNT(*) FROM item_likes WHERE item_id = p.id AND user_id = ?) AS liked_by_me
+        FROM products p
+        ORDER BY created_at DESC
+    """, (session['user_id'],))
+    items = [dict(row) for row in cursor.fetchall()]
+    return jsonify(items)
+
+
+
+
+if __name__ == '__main__':
+    init_db()  # DB 테이블 최초 생성용
+    socketio.run(app, debug=True)  

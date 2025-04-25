@@ -125,19 +125,19 @@
     <input type="password" id="password" name="password" placeholder="비밀번호를 입력해주세요" required>
 
     <button type="submit" class="btn-green">로그인</button>
-
-    <div class="link-group">
-      <a href="register.html">회원가입</a>
-    </div>
   </form>
+    <div class="link-group">
+      <a href="#" onclick="window.location.href='/register'">회원가입</a>
+    </div>
 </div>
 
 </body>
 </html>
 
 <script>
-  function handleLogin(event) {
+  async function handleLogin(event) {
     event.preventDefault();
+
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value.trim();
 
@@ -146,8 +146,28 @@
       return false;
     }
 
-    alert("로그인 성공!");
-    window.location.href = "home.html";
-    return true;
+    try {
+      const response = await fetch('/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(result.message); // 로그인 성공 메시지
+        window.location.href = "/home";  // 홈 화면으로 이동 (라우터 필요)
+      } else {
+        alert(result.message); // 로그인 실패 메시지
+      }
+    } catch (error) {
+      alert("서버 오류가 발생했습니다.");
+      console.error(error);
+    }
+
+    return false;
   }
 </script>

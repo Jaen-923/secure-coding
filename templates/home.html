@@ -217,13 +217,15 @@
     <div class="logo-section">
       <img src="../static/whitehat_logo.png" alt="로고">
       <h1 class="logo-text">
-        <a href="home.html" style="text-decoration: none; color: inherit;">화햇마켓</a>
+        <a href="/home" style="text-decoration: none; color: inherit;">화햇마켓</a>
       </h1>
     </div>
     <nav class="nav">
-      <a href="./mypage.html">마이페이지</a>
-      <a href="#">상품 등록</a>
-      <a href="#">로그아웃</a>
+      <a href="/mypage">마이페이지</a>
+      <a href="/product/register">상품 등록</a>
+      <form id="logoutForm" method="POST" action="/auth/logout" style="display:inline;">
+        <button type="submit" style="all: unset; cursor: pointer; font-weight: bold; color: #00a04e;">로그아웃</button>
+      </form>
     </nav>
   </header>
 
@@ -269,13 +271,6 @@
 
     <div class="section-header">
       <h2>📦 전체 상품</h2>
-      <div class="sort-bar">
-        <select>
-          <option>최신순</option>
-          <option>가격 높은 순</option>
-          <option>가격 낮은 순</option>
-        </select>
-      </div>
     </div>
     <div class="product-list-vertical">
       <div class="product-row">
@@ -318,21 +313,84 @@
   </div>
 
   <script>
-    function toggleLike(btn) {
-      const img = btn.querySelector('img');
-      const span = btn.parentElement.querySelector('span');
-      let count = parseInt(span.textContent);
+    document.addEventListener("DOMContentLoaded", async () => {
+  const scrollList = document.querySelector(".scroll-list");
+  const verticalList = document.querySelector(".product-list-vertical");
 
-      if (!btn.classList.contains('filled')) {
-        btn.classList.add('filled');
+  // 인기 상품 조회
+  const popularRes = await fetch("/items/popular");
+  const popularItems = await popularRes.json();
+  scrollList.innerHTML = "";
+  popularItems.forEach(item => {
+    const heartImg = item.liked_by_me ? 'heart.png' : 'empty_heart.png';  // 하트 상태 설정
+    scrollList.innerHTML += `
+      <a href="/product/${item.id}" class="product" style="text-decoration: none; color: inherit;">
+        <div class="date">${item.created_at.split('T')[0]}</div>
+        <img src="../static/item.png" alt="상품 이미지">
+        <div class="title">${item.title}</div>
+        <div class="price">${item.price.toLocaleString()}원</div>
+        <div class="heart-container">
+          <button class="heart-btn" onclick="event.preventDefault(); toggleLike(this, '${item.id}')">
+            <img src="../static/${heartImg}" alt="좋아요">
+          </button>
+          <span>${item.like_count}</span>
+        </div>
+      </a>`;
+  });
+
+  // 전체 상품 조회
+  const allRes = await fetch("/items/all");
+  const allItems = await allRes.json();
+  verticalList.innerHTML = "";
+  allItems.forEach(item => {
+    const heartImg = item.liked_by_me ? 'heart.png' : 'empty_heart.png';  // 하트 상태 설정
+    verticalList.innerHTML += `
+      <a href="/product/${item.id}" style="text-decoration: none; color: inherit;">
+        <div class="product-row">
+          <div class="product-left">
+            <img src="../static/item.png" alt="상품 이미지">
+            <div>
+              <div class="title">${item.title}</div>
+              <div class="price">${item.price.toLocaleString()}원</div>
+            </div>
+          </div>
+          <div class="product-date">${item.created_at.split('T')[0]}</div>
+          <div class="product-like">
+            <div class="heart-container">
+              <button class="heart-btn" onclick="event.preventDefault(); toggleLike(this, '${item.id}')">
+                <img src="../static/${heartImg}" alt="좋아요">
+              </button>
+              <span>${item.like_count}</span>
+            </div>
+          </div>
+        </div>
+      </a>`;
+  });
+});
+
+// 좋아요 토글 예시
+function toggleLike(btn, itemId) {
+  const img = btn.querySelector('img');
+  const span = btn.nextElementSibling;
+
+  fetch(`/items/${itemId}/like`, { method: "POST" })
+    .then(res => res.json())
+    .then(data => {
+      let count = parseInt(span.textContent);
+      if (data.liked) {
         img.src = '../static/heart.png';
         span.textContent = count + 1;
       } else {
-        btn.classList.remove('filled');
         img.src = '../static/empty_heart.png';
         span.textContent = count - 1;
       }
-    }
+    })
+    .catch(err => {
+      console.error("좋아요 처리 실패", err);
+      alert("좋아요 처리 중 오류가 발생했습니다.");
+    });
+}
+
 
     function sendMessage() {
       const chatBox = document.getElementById('chat-box');
@@ -346,6 +404,23 @@
         chatBox.scrollTop = chatBox.scrollHeight;
       }
     }
+
+    // 로그아웃 처리
+    document.getElementById('logoutForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const res = await fetch('/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (res.ok) {
+        // 캐시 방지 및 이동
+        window.location.href = '/login';
+      } else {
+        alert('로그아웃 실패');
+      }
+    });
+
   </script>
+  
 </body>
 </html>
