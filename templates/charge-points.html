@@ -61,13 +61,13 @@
 <body>
   <div class="container">
     <h2>포인트 충전</h2>
-    <form onsubmit="return validateForm()">
+    <form onsubmit="return validateForm(event)">
       <label for="amount">충전할 포인트</label>
       <div class="form-group">
-        <input type="number" id="amount" name="amount" placeholder="예: 1000" min="1">
+        <input type="number" id="amount" name="amount" placeholder="예: 1000" min="1" required>
 
         <label for="password">비밀번호 확인</label>
-        <input type="password" id="password" name="password" placeholder="비밀번호 입력">
+        <input type="password" id="password" name="password" placeholder="비밀번호 입력" required>
 
         <button type="submit">충전하기</button>
       </div>
@@ -75,22 +75,44 @@
   </div>
 
   <script>
-    function validateForm() {
+    async function validateForm(event) {
+      event.preventDefault();  
+
       const amount = document.getElementById("amount").value;
       const password = document.getElementById("password").value;
 
       if (!amount || amount <= 0) {
         alert("충전할 포인트를 입력해주세요.");
-        return false;
+        return;
       }
 
       if (!password || password.length < 4) {
         alert("비밀번호를 입력해주세요. (최소 4자리 이상)");
-        return false;
+        return;
       }
 
-      alert("충전 요청이 완료되었습니다.");
-      return true;
+      try {
+        const response = await fetch('/points/deposit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount: amount,
+            password: password,
+          }),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          alert('충전 요청이 완료되었습니다.');
+          window.location.href = "/mypage";  
+        } else {
+          alert(data.message || '오류가 발생했습니다.');
+        }
+      } catch (err) {
+        alert('서버 오류로 충전할 수 없습니다.');
+      }
     }
   </script>
 </body>

@@ -118,8 +118,7 @@
       <div class="price" id="price">0원</div>
       <div class="description" id="description">상품 설명</div>
       <div class="btn-wrapper">
-        <a href="#" class="btn">구매하기</a>
-        <!-- 신고하기 버튼 추가 -->
+        <a href="#" class="btn" onclick="submitPurchase()">구매하기</a>
         <a href="#" class="report-btn" onclick="openReportDialog()">🚨 신고하기</a>
       </div>
     </div>
@@ -160,7 +159,6 @@
         document.getElementById("description").textContent = item.description;
         document.getElementById("meta").textContent = `등록자: ${item.seller_nickname} | 등록일: ${item.created_at?.split("T")[0]}`;
       } catch (err) {
-        console.error(err);
         alert("상품 정보를 불러오는 데 실패했습니다.");
       }
     });
@@ -195,6 +193,45 @@
 
       window.location.href = "/home";
     }
+
+    // 구매하기 API 호출
+async function submitPurchase() {
+  const itemId = "{{ item_id }}"; // 서버에서 상품 ID를 가져오는 부분
+  const amount = prompt("구매에 사용할 포인트 금액을 입력하세요:", "0");
+
+  // 포인트 금액을 입력하지 않거나 0 이하로 입력할 경우
+  if (!amount || amount <= 0) {
+    alert("유효한 포인트 금액을 입력해주세요.");
+    return;
+  }
+
+  const body = {
+    item_id: itemId,
+    amount: parseInt(amount)
+  };
+
+  try {
+    const res = await fetch('/points/buy', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+
+    const result = await res.json();
+
+        if (!res.ok) {
+        alert(result.message);
+        } else {
+        alert(result.message);
+        window.location.href = "/home"; // 구매 후 홈으로 이동
+        }
+    } catch (error) {
+        alert("구매 처리 중 오류가 발생했습니다.");
+    }
+    }
+
   </script>
 </body>
 </html>

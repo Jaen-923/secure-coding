@@ -1,21 +1,31 @@
 import sqlite3
+import bcrypt
 import uuid
 from flask import Flask, render_template, request, redirect, url_for, session, flash, g, jsonify
 from flask_socketio import SocketIO, send
+from flask_cors import CORS
+from datetime import datetime
+from dotenv import load_dotenv
+import os
 
-from datetime import datetime  # datetime이 위에서 사용되는데 import 안 되어 있어서 함께 추가해야 함
+load_dotenv()  # .env 파일에서 환경 변수 로드
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret!'
+
+CORS(app, resources={r"/api/*": {
+    "origins": "http://localhost:5000",
+    "methods": ["GET", "POST", "PUT", "DELETE"],  
+}})
+
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
 DATABASE = 'market.db'
 socketio = SocketIO(app)
 
-# 데이터베이스 연결 관리: 요청마다 연결 생성 후 사용, 종료 시 close
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
         db = g._database = sqlite3.connect(DATABASE)
-        db.row_factory = sqlite3.Row  # 결과를 dict처럼 사용하기 위함
+        db.row_factory = sqlite3.Row  
     return db
 
 @app.teardown_appcontext
@@ -51,7 +61,7 @@ def init_db():
                 title VARCHAR(255),
                 description TEXT,
                 price INT,
-                status VARCHAR(20),
+                status VARCHAR(20) DEFAULT '판매중',
                 seller_id VARCHAR(36),
                 created_at DATETIME,
                 FOREIGN KEY (seller_id) REFERENCES users(id)
@@ -101,6 +111,12 @@ def init_db():
 
         db.commit()
 
+@app.before_request
+def before_request():
+    # 로그인 페이지와 회원가입 페이지 외에 모든 페이지에서 로그인 여부 체크
+    if 'user_id' not in session and request.endpoint not in ['login_page', 'register_page', 'login', 'signup']:
+        return redirect(url_for('login_page'))  # 로그인 페이지로 리디렉션
+
 
 # 기본 라우트
 @app.route('/')
@@ -133,7 +149,7 @@ def product_register_page():
 
 @app.route('/point')
 def point_charge_page():
-    return render_template('charge-point.html')
+    return render_template('charge-points.html')
 
 @app.route('/change/password')
 def change_password_page():
@@ -190,20 +206,24 @@ def create_product():
         return jsonify({'message': '상품 등록 실패', 'error': str(e)}), 500
 
 
+# 로그인
 @app.route('/auth/login', methods=['POST'])
 def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
+    
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
     user = cursor.fetchone()
-    if user:
+
+    if user and bcrypt.checkpw(password.encode('utf-8'), user['password']):
         session['user_id'] = user['id']
         return jsonify({'message': '로그인 성공'})
     else:
         return jsonify({'message': '아이디 또는 비밀번호가 올바르지 않습니다.'}), 401
+
 
 # --- 로그아웃 ---
 @app.route('/auth/logout', methods=['POST'])
@@ -212,6 +232,7 @@ def logout():
     return jsonify({'message': '로그아웃 되었습니다.'})
 
 # --- 회원가입 ---
+# 회원가입
 @app.route('/auth/signup', methods=['POST'])
 def signup():
     data = request.get_json()
@@ -220,17 +241,25 @@ def signup():
     nickname = data.get('nickname')
     bio = data.get('bio', '')
     user_id = str(uuid.uuid4())
+    
+    # 비밀번호 해싱
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
     db = get_db()
     cursor = db.cursor()
     try:
-        cursor.execute("INSERT INTO users (id, username, password, nickname, bio, role, created_at) VALUES (?, ?, ?, ?, ?, 'user', ?)",
-               (user_id, username, password, nickname, bio, datetime.utcnow()))
+        cursor.execute("""
+            INSERT INTO users (id, username, password, nickname, bio, role, created_at) 
+            VALUES (?, ?, ?, ?, ?, 'user', ?)
+        """, (user_id, username, hashed_password, nickname, bio, datetime.utcnow()))
         db.commit()
         return jsonify({'message': '회원가입 성공'})
-    except:
+    except sqlite3.IntegrityError:
         return jsonify({'message': '이미 존재하는 사용자입니다.'}), 409
+
     
 # --- 비밀번호 변경 ---
+# 비밀번호 변경
 @app.route('/auth/pwchange', methods=['PATCH'])
 def change_password():
     if 'user_id' not in session:
@@ -242,15 +271,28 @@ def change_password():
 
     db = get_db()
     cursor = db.cursor()
+    
+    # 현재 비밀번호 확인
     cursor.execute("SELECT password FROM users WHERE id = ?", (session['user_id'],))
     user = cursor.fetchone()
 
-    if not user or user['password'] != current_pw:
+    if not user or not bcrypt.checkpw(current_pw.encode('utf-8'), user['password'].encode('utf-8')):
         return jsonify({'message': '현재 비밀번호가 일치하지 않습니다.'}), 403
 
-    cursor.execute("UPDATE users SET password = ? WHERE id = ?", (new_pw, session['user_id']))
-    db.commit()
-    return jsonify({'message': '비밀번호가 변경되었습니다.'})
+    try:
+        # 새로운 비밀번호 해시 처리
+        hashed_new_pw = bcrypt.hashpw(new_pw.encode('utf-8'), bcrypt.gensalt())
+
+        # 비밀번호 업데이트
+        cursor.execute("UPDATE users SET password = ? WHERE id = ?", (hashed_new_pw, session['user_id']))
+        db.commit()
+        
+        return jsonify({'message': '비밀번호가 변경되었습니다.'})
+
+    except Exception as e:
+        return jsonify({'message': '비밀번호 변경 실패', 'error': str(e)}), 500
+
+
 
 # --- 비밀번호 찾기 ---
 @app.route('/auth/pwfind', methods=['POST'])
@@ -395,7 +437,7 @@ def get_my_items():
                 WHERE item_id = p.id AND user_id = ?
             ) AS liked_by_me
         FROM products p
-        WHERE seller_id = ?
+        WHERE seller_id = ? AND p.status = '판매중'
     """, (session['user_id'], session['user_id']))
     items = [dict(row) for row in cursor.fetchall()]
     return jsonify(items)
@@ -405,49 +447,71 @@ def get_my_items():
 def deposit_points():
     if 'user_id' not in session:
         return jsonify({'message': 'Unauthorized'}), 401
-    amount = request.json.get('amount')
-    db = get_db()
-    cursor = db.cursor()
-    transaction_id = str(uuid.uuid4())
-    cursor.execute("""
-        INSERT INTO point_transactions (id, user_id, type, amount, created_at)
-        VALUES (?, ?, '충전', ?, ?)
-    """, (transaction_id, session['user_id'], amount, datetime.utcnow()))
-    db.commit()
-    return jsonify({'message': '포인트가 충전되었습니다.'})
 
-# --- 포인트 출금 ---
-@app.route('/points/withdraw', methods=['POST'])
-def withdraw_points():
-    if 'user_id' not in session:
-        return jsonify({'message': 'Unauthorized'}), 401
-    amount = request.json.get('amount')
+    # 요청 데이터 받기
+    data = request.get_json()
+    amount = data.get('amount')
+    password = data.get('password')
+
     db = get_db()
     cursor = db.cursor()
-    transaction_id = str(uuid.uuid4())
-    cursor.execute("""
-        INSERT INTO point_transactions (id, user_id, type, amount, created_at)
-        VALUES (?, ?, '출금', ?, ?)
-    """, (transaction_id, session['user_id'], amount, datetime.utcnow()))
-    db.commit()
-    return jsonify({'message': '포인트가 출금되었습니다.'})
+    cursor.execute("SELECT password FROM users WHERE id = ?", (session['user_id'],))
+    user = cursor.fetchone()
+
+    if not user or not bcrypt.checkpw(password.encode('utf-8'), user['password']):
+        return jsonify({'message': '비밀번호가 일치하지 않습니다.'}), 403
+
+
+    # 포인트 충전 처리
+    try:
+        transaction_id = str(uuid.uuid4())
+        cursor.execute("""
+            INSERT INTO point_transactions (id, user_id, type, amount, created_at)
+            VALUES (?, ?, '충전', ?, ?)
+        """, (transaction_id, session['user_id'], amount, datetime.utcnow()))
+        
+        # 포인트 충전 성공
+        db.commit()
+        return jsonify({'message': '포인트가 충전되었습니다.'})
+    except Exception as e:
+        return jsonify({'message': '포인트 충전 실패', 'error': str(e)}), 500
+
 
 # --- 포인트 사용 ---
 @app.route('/points/buy', methods=['POST'])
 def use_points():
     if 'user_id' not in session:
         return jsonify({'message': 'Unauthorized'}), 401
-    item_id = request.json.get('item_id')
-    amount = request.json.get('amount')
+
+    data = request.get_json()
+    item_id = data.get('item_id')
+    amount = data.get('amount')
+
     db = get_db()
     cursor = db.cursor()
-    transaction_id = str(uuid.uuid4())
-    cursor.execute("""
-        INSERT INTO point_transactions (id, user_id, type, amount, item_id, created_at)
-        VALUES (?, ?, '구매', ?, ?, ?)
-    """, (transaction_id, session['user_id'], amount, item_id, datetime.utcnow()))
-    db.commit()
-    return jsonify({'message': '포인트가 사용되었습니다.'})
+
+    # 포인트를 차감하고 상품 상태를 '거래완료'로 변경
+    try:
+        # 포인트 차감 처리 (예시로 단순히 포인트 차감)
+        transaction_id = str(uuid.uuid4())
+        cursor.execute("""
+            INSERT INTO point_transactions (id, user_id, type, amount, item_id, created_at)
+            VALUES (?, ?, '구매', ?, ?, ?)
+        """, (transaction_id, session['user_id'], amount, item_id, datetime.utcnow()))
+        
+        # 상품 상태 변경 (판매중 -> 거래완료)
+        cursor.execute("""
+            UPDATE products
+            SET status = '거래완료'
+            WHERE id = ?
+        """, (item_id,))
+        
+        db.commit()
+        return jsonify({'message': '포인트가 사용되었습니다. 상품이 거래완료되었습니다.'})
+    except Exception as e:
+        return jsonify({'message': '포인트 사용 실패', 'error': str(e)}), 500
+
+
 
 @app.route('/items/<item_id>/like', methods=['POST'])
 def toggle_like(item_id):
@@ -457,17 +521,14 @@ def toggle_like(item_id):
     db = get_db()
     cursor = db.cursor()
 
-    # 이미 좋아요했는지 확인
     cursor.execute("SELECT * FROM item_likes WHERE user_id = ? AND item_id = ?", (session['user_id'], item_id))
     like = cursor.fetchone()
 
     if like:
-        # 좋아요 취소
         cursor.execute("DELETE FROM item_likes WHERE user_id = ? AND item_id = ?", (session['user_id'], item_id))
         db.commit()
         return jsonify({'message': '좋아요 취소', 'liked': False})
     else:
-        # 좋아요 추가
         cursor.execute("INSERT INTO item_likes (user_id, item_id, liked_at) VALUES (?, ?, ?)", (session['user_id'], item_id, datetime.utcnow()))
         db.commit()
         return jsonify({'message': '좋아요 추가', 'liked': True})
@@ -483,6 +544,7 @@ def get_popular_items():
             (SELECT COUNT(*) FROM item_likes WHERE item_id = p.id) AS like_count,
             (SELECT COUNT(*) FROM item_likes WHERE item_id = p.id AND user_id = ?) AS liked_by_me
         FROM products p
+        WHERE p.status = '판매중'
         ORDER BY like_count DESC
         LIMIT 10
     """, (session['user_id'],))
@@ -500,6 +562,7 @@ def get_all_items():
             (SELECT COUNT(*) FROM item_likes WHERE item_id = p.id) AS like_count,
             (SELECT COUNT(*) FROM item_likes WHERE item_id = p.id AND user_id = ?) AS liked_by_me
         FROM products p
+        WHERE p.status = '판매중'
         ORDER BY created_at DESC
     """, (session['user_id'],))
     items = [dict(row) for row in cursor.fetchall()]
