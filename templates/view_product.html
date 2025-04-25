@@ -1,8 +1,87 @@
-{% extends "base.html" %}
-{% block title %}상품 상세보기{% endblock %}
-{% block content %}
-<h2>{{ product.title }}</h2>
-<p>{{ product.description }}</p>
-<p>가격: {{ product.price }}</p>
-<p>판매자: {{ seller.username if seller else '알 수 없음' }}</p>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>상품 상세보기</title>
+  <style>
+    body {
+      font-family: "Pretendard", sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 800px;
+      margin: 5rem auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      min-height: 600px;
+    }
+    .image {
+      width: 100%;
+      min-height: 100px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+    .info {
+      margin-top: 2rem;
+    }
+    .info .meta {
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 1rem;
+    }
+    .info h2 {
+      font-size: 1.7rem;
+      color: #00a04e;
+      margin-bottom: 1rem;
+    }
+    .info .price {
+      font-size: 1.2rem;
+      color: #333;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    .info .description {
+      font-size: 1rem;
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 2.5rem;
+    }
+    .btn-wrapper {
+      text-align: right;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.8rem 1.6rem;
+      background-color: #00a04e;
+      color: white;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 1rem;
+    }
+    .btn:hover {
+      background-color: #008c4a;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="../static/item.png" alt="상품 이미지" class="image">
+    <div class="info">
+    <div class="meta">등록자: 손사용자 | 등록일: 2025-04-15</div>
+      <h2>에코백</h2>
+      <div class="price">10,000원</div>
+      <div class="description">
+        심플하고 실용적인 디자인의 에코백입니다. 튼튼한 캔버스 원단으로 제작되었으며, 환경을 생각하는 소비자에게 적합합니다.
+      </div>
+      <div class="btn-wrapper">
+        <a href="#" class="btn">구매하기</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
