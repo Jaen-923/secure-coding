@@ -2,6 +2,9 @@
 
 Tiny Second-hand Shopping Platform을 개발하며,
 사용자 인증, 상품 거래, 포인트 송금 기능을 포함한 전 과정을 보안 중심으로 구현하였습니다.
+  <img src="https://github.com/user-attachments/assets/92e68e18-566f-4243-a743-a3f5ffa66f9b" alt="스크린샷1" width="700">
+  <img src="https://github.com/user-attachments/assets/274181f4-db85-4a8c-b24b-d04e511015ad" alt="스크린샷2" width="700">
+
 
 <br>
 
