@@ -113,22 +113,18 @@ def init_db():
 
 @app.before_request
 def before_request():
-    # 로그인 페이지와 회원가입 페이지 외에 모든 페이지에서 로그인 여부 체크
-    if 'user_id' not in session and request.endpoint not in ['login_page', 'register_page', 'login', 'signup']:
-        return redirect(url_for('login_page'))  # 로그인 페이지로 리디렉션
+    if 'user_id' not in session and request.endpoint not in ['login_page', 'register_page', 'login', 'signup', 'static']:
+        return redirect(url_for('login_page'))
+
 
 
 # 기본 라우트
 @app.route('/')
 def index():
-    if 'user_id' in session:
-        return redirect(url_for('dashboard'))
     return render_template('login.html')
 
 @app.route('/home')
 def dashboard():
-    if 'user_id' not in session:
-        return redirect(url_for('index'))
     return render_template('home.html')
 
 @app.route('/login')
