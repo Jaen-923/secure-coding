@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>화햇마켓 - 홈</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Pretendard", sans-serif;
+      background: #f9f9f9;
+      padding-top: 80px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-bottom: 2px solid #00a04e;
+      background-color: white;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .logo-section { display: flex; align-items: center; }
+    .logo-section img { height: 40px; margin-right: 0.5rem; }
+    .logo-text {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #00a04e;
+      margin: 0;
+    }
+    .nav { display: flex; gap: 2rem; }
+    .nav a {
+      text-decoration: none;
+      color: #00a04e;
+      font-weight: bold;
+    }
+    .home-container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    .section-header h2 {
+      margin: 0;
+      color: #333;
+      font-size: 1.3rem;
+    }
+    .sort-bar select {
+      padding: 0.4rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 0.9rem;
+    }
+    .scroll-list {
+      display: flex;
+      overflow-x: auto;
+      gap: 1rem;
+      padding-bottom: 1rem;
+      margin-bottom: 2rem;
+    }
+    .scroll-list::-webkit-scrollbar { height: 6px; }
+    .scroll-list::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 3px;
+    }
+    .product {
+      min-width: 200px;
+      position: relative;
+      padding: 0.75rem;
+      padding-top: 2.5rem;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    .product img {
+      width: 160px;
+      height: auto;
+      margin-bottom: 0.5rem;
+    }
+    .product .title { font-weight: bold; margin-bottom: 0.3rem; }
+    .product .price { font-size: 0.9rem; color: #333; }
+    .product .date {
+      position: absolute;
+      top: 0.5rem;
+      left: 0.75rem;
+      font-size: 0.75rem;
+      color: #888;
+    }
+
+    .heart-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 1rem;
+    }
+
+    .heart-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .heart-btn img {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .chat-section {
+      margin: 3rem 0;
+    }
+    .chat-box {
+      border: 1px solid #ccc;
+      height: 300px;
+      margin-bottom: 0.5rem;
+      padding: 0.5rem;
+      overflow-y: auto;
+      background: #fff;
+      border-radius: 4px;
+    }
+
+    #chat-input {
+      padding: 0.5rem;
+      width: calc(100% - 70px);
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .send-btn {
+      padding: 0.5rem;
+      margin-left: 0.5rem;
+      background-color: #00a04e;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .send-btn:hover { background-color: #009247; }
+
+    .product-list-vertical {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .product-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 1rem;
+      position: relative;
+    }
+
+    .product-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .product-left img {
+      width: 120px;
+      border-radius: 6px;
+    }
+    .product-left .title {
+      font-weight: bold;
+      font-size: 1.05rem;
+    }
+    .product-left .price {
+      font-size: 0.9rem;
+      color: #333;
+      margin-top: 0.3rem;
+    }
+    .product-date {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 0.75rem;
+      color: #888;
+    }
+
+    .product-like {
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+    }
+
+    .product-like .heart-container {
+      justify-content: flex-end;
+      
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo-section">
+      <img src="../static/whitehat_logo.png" alt="로고">
+      <h1 class="logo-text">
+        <a href="home.html" style="text-decoration: none; color: inherit;">화햇마켓</a>
+      </h1>
+    </div>
+    <nav class="nav">
+      <a href="./mypage.html">마이페이지</a>
+      <a href="#">상품 등록</a>
+      <a href="#">로그아웃</a>
+    </nav>
+  </header>
+
+  <div class="home-container">
+    <div class="section-header">
+      <h2>🔥 현재 인기있는 상품이에요</h2>
+    </div>
+    <div class="scroll-list">
+      <div class="product">
+        <div class="date">2025-04-14</div>
+        <img src="../static/item.png" alt="상품 이미지">
+        <div class="title">MacBook M1</div>
+        <div class="price">300,000원</div>
+        <div class="heart-container">
+          <button class="heart-btn" onclick="toggleLike(this)">
+            <img src="../static/empty_heart.png" alt="좋아요">
+          </button>
+          <span>24</span>
+        </div>
+      </div>
+      <div class="product">
+        <div class="date">2025-04-13</div>
+        <img src="../static/item.png" alt="상품 이미지">
+        <div class="title">iPhone 14</div>
+        <div class="price">1,200,000원</div>
+        <div class="heart-container">
+          <button class="heart-btn" onclick="toggleLike(this)">
+            <img src="../static/empty_heart.png" alt="좋아요">
+          </button>
+          <span>48</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-section">
+      <h2 style="text-align: center;">💬 실시간 전체 채팅</h2>
+      <div id="chat-box" class="chat-box"></div>
+      <div style="display: flex; align-items: center; margin-top: 0.5rem;">
+        <input type="text" id="chat-input" placeholder="메시지를 입력하세요...">
+        <button class="send-btn" onclick="sendMessage()">전송</button>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h2>📦 전체 상품</h2>
+      <div class="sort-bar">
+        <select>
+          <option>최신순</option>
+          <option>가격 높은 순</option>
+          <option>가격 낮은 순</option>
+        </select>
+      </div>
+    </div>
+    <div class="product-list-vertical">
+      <div class="product-row">
+        <div class="product-left">
+          <img src="../static/item.png" alt="상품 이미지">
+          <div>
+            <div class="title">AirPods Pro</div>
+            <div class="price">120,000원</div>
+          </div>
+        </div>
+        <div class="product-date">2025-04-08</div>
+        <div class="product-like">
+          <div class="heart-container">
+            <button class="heart-btn" onclick="toggleLike(this)">
+              <img src="../static/empty_heart.png" alt="좋아요">
+            </button>
+            <span>15</span>
+          </div>
+        </div>
+      </div>
+      <div class="product-row">
+        <div class="product-left">
+          <img src="../static/item.png" alt="상품 이미지">
+          <div>
+            <div class="title">LG 그램 16</div>
+            <div class="price">1,300,000원</div>
+          </div>
+        </div>
+        <div class="product-date">2025-04-07</div>
+        <div class="product-like">
+          <div class="heart-container">
+            <button class="heart-btn" onclick="toggleLike(this)">
+              <img src="../static/empty_heart.png" alt="좋아요">
+            </button>
+            <span>21</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleLike(btn) {
+      const img = btn.querySelector('img');
+      const span = btn.parentElement.querySelector('span');
+      let count = parseInt(span.textContent);
+
+      if (!btn.classList.contains('filled')) {
+        btn.classList.add('filled');
+        img.src = '../static/heart.png';
+        span.textContent = count + 1;
+      } else {
+        btn.classList.remove('filled');
+        img.src = '../static/empty_heart.png';
+        span.textContent = count - 1;
+      }
+    }
+
+    function sendMessage() {
+      const chatBox = document.getElementById('chat-box');
+      const chatInput = document.getElementById('chat-input');
+      const msg = chatInput.value.trim();
+      if (msg) {
+        const p = document.createElement('p');
+        p.textContent = msg;
+        chatBox.appendChild(p);
+        chatInput.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    }
+  </script>
+</body>
+</html>

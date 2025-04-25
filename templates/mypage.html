@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>마이페이지</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Pretendard", sans-serif;
+      background: #f9f9f9;
+      padding-top: 80px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-bottom: 2px solid #00a04e;
+      background-color: white;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .logo-section { display: flex; align-items: center; }
+    .logo-section img { height: 40px; margin-right: 0.5rem; }
+    .logo-text {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #00a04e;
+      margin: 0;
+    }
+    .nav { display: flex; gap: 2rem; }
+    .nav a {
+      text-decoration: none;
+      color: #00a04e;
+      font-weight: bold;
+    }
+    .container {
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .user-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 3rem 2rem;
+      border-bottom: 2px solid #eee;
+    }
+    .user-text {
+      text-align: left;
+    }
+    .user-text h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.7rem;
+    }
+    .user-text p {
+      margin: 0.25rem 0;
+      color: #555;
+      font-size: 1.1rem;
+    }
+    .points-box {
+      text-align: center;
+      background-color: #f0fff2;
+      padding: 1rem 2rem;
+      border: 2px solid #00a04e;
+      border-radius: 10px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #00a04e;
+      margin-left: 2rem;
+    }
+    .quick-links {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+    .quick-links a, .quick-links button {
+      flex: 1 1 45%;
+      margin: 0.5rem;
+      padding: 1rem;
+      text-align: center;
+      background-color: #f2fff4;
+      border: 1px solid #00a04e;
+      border-radius: 10px;
+      text-decoration: none;
+      color: #008c4a;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .quick-links a:hover, .quick-links button:hover {
+      background-color: #dff8e8;
+    }
+    .section {
+      margin-top: 2.5rem;
+    }
+    h2 {
+      color: #00a04e;
+      border-bottom: 2px solid #00a04e;
+      padding-bottom: 0.5rem;
+    }
+    .product-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .product-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background-color: #fafafa;
+      padding: 1rem;
+      position: relative;
+    }
+    .product-card img {
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .product-info {
+      flex: 1;
+      margin-left: 1rem;
+    }
+    .product-info h4 {
+      margin: 0 0 0.3rem;
+    }
+    .product-info p {
+      margin: 0;
+      color: #333;
+    }
+    .product-actions {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+    }
+    .product-actions button {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.85rem;
+      background-color: #00a04e;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+    }
+    .product-actions button:hover {
+      background-color: #008c4a;
+    }
+    .product-like {
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+    }
+    .heart-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .heart-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+    }
+    .heart-btn img {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      display: block;
+    }
+    dialog {
+      border: none;
+      border-radius: 10px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 400px;
+    }
+    dialog textarea {
+      width: 100%;
+      height: 100px;
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin-top: 1rem;
+    }
+    dialog button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      background-color: #00a04e;
+      color: white;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<header class="header">
+  <div class="logo-section">
+    <img src="../static/whitehat_logo.png" alt="로고">
+    <h1 class="logo-text">
+      <a href="home.html" style="text-decoration: none; color: inherit;">화햇마켓</a>
+    </h1>
+  </div>
+  <nav class="nav">
+    <a href="#">마이페이지</a>
+    <a href="#">상품 등록</a>
+    <a href="#">로그아웃</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="user-info">
+    <div class="user-text">
+      <h3>손사용자 님</h3>
+      <p id="intro-text">안녕하세요! 저는 친환경 중고거래를 실천하고 있는 사용자입니다.</p>
+    </div>
+    <div class="points-box">702P</div>
+  </div>
+
+  <div class="quick-links">
+    <a href="./change-password.html">비밀번호 변경</a>
+    <button onclick="openIntroDialog()">소개글 수정</button>
+    <a href="./charge-points.html">포인트 충전</a>
+  </div>
+
+  <div class="section">
+    <h2>📦 내가 등록한 상품</h2>
+    <div class="product-list">
+      <div class="product-card">
+        <img src="../static/item.png" alt="상품 이미지">
+        <div class="product-info">
+          <h4>에코백</h4>
+          <p>10,000원</p>
+          <p style="color: #888; font-size: 0.85rem;">등록일: 2025-04-15</p>
+          <p style="color: green; font-weight: bold;">판매중</p>
+        </div>
+        <div class="product-like">
+          <div class="heart-container">
+            <button class="heart-btn" onclick="toggleLike(this)">
+              <img src="../static/empty_heart.png" alt="좋아요">
+            </button>
+            <span>24</span>
+          </div>
+        </div>
+        <div class="product-actions">
+          <button>삭제</button>
+        </div>
+      </div>
+      
+      <div class="product-card">
+        <img src="../static/item.png" alt="상품 이미지">
+        <div class="product-info">
+          <h4>빈티지 의자</h4>
+          <p>35,000원</p>
+          <p style="color: #888; font-size: 0.85rem;">등록일: 2025-04-10</p>
+          <p style="color: gray;">거래 완료</p>
+        </div>
+        <div class="product-like">
+          <div class="heart-container">
+            <button class="heart-btn" onclick="toggleLike(this)">
+              <img src="../static/heart.png" alt="좋아요">
+            </button>
+            <span>12</span>
+          </div>
+        </div>
+        <div class="product-actions">
+          <button>삭제</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<dialog id="introDialog">
+  <form method="dialog">
+    <label for="introInput">소개글 수정</label>
+    <textarea id="introInput">안녕하세요! 저는 친환경 중고거래를 실천하고 있는 사용자입니다.</textarea>
+    <button onclick="saveIntro()">저장</button>
+  </form>
+</dialog>
+
+<script>
+  function toggleLike(btn) {
+    const img = btn.querySelector('img');
+    const span = btn.nextElementSibling;
+    let count = parseInt(span.textContent);
+
+    if (img.src.includes('empty_heart.png')) {
+      img.src = '../static/heart.png';
+      span.textContent = count + 1;
+    } else {
+      img.src = '../static/empty_heart.png';
+      span.textContent = count - 1;
+    }
+  }
+
+  function openIntroDialog() {
+    const dialog = document.getElementById('introDialog');
+    const intro = document.getElementById('intro-text').innerText;
+    document.getElementById('introInput').value = intro;
+    dialog.showModal();
+  }
+
+  function saveIntro() {
+    const newIntro = document.getElementById('introInput').value;
+    document.getElementById('intro-text').innerText = newIntro;
+    document.getElementById('introDialog').close();
+  }
+</script>
+</body>
+</html>
